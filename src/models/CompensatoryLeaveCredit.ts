@@ -23,6 +23,8 @@ const compensatoryLeaveCreditSchema = new Schema<ICompensatoryLeaveCredit>(
   { timestamps: true }
 );
 
+compensatoryLeaveCreditSchema.index({ employeeId: 1, status: 1 });
+
 export default mongoose.model<ICompensatoryLeaveCredit>(
   'CompensatoryLeaveCredit',
   compensatoryLeaveCreditSchema

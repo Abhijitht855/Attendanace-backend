@@ -5,6 +5,7 @@ import {
   approveEmployee,
   rejectEmployee,
   updateEmployeeStatus,
+  updateEmployee,
 } from '../controllers/employeeController';
 import { protect } from '../middleware/auth';
 
@@ -136,7 +137,51 @@ router.delete('/:id/reject', rejectEmployee);
  *     responses:
  *       200:
  *         description: Status updated successfully
+ * 
  */
 router.patch('/:id/status', updateEmployeeStatus);
+
+/**
+ * @swagger
+ * /api/employees/{id}:
+ *   patch:
+ *     summary: Update Employee Details (Admin Only)
+ *     tags: [Employee Management]
+ *     security:
+ *       - OAuth2Password: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Employee ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: "Arjun K"
+ *               email:
+ *                 type: string
+ *                 example: "arjun.new@company.com"
+ *               department:
+ *                 type: string
+ *                 example: "Product Management"
+ *     responses:
+ *       200:
+ *         description: Employee details updated successfully
+ *       400:
+ *         description: Invalid input or duplicate email
+ *       403:
+ *         description: Forbidden (Admin access required)
+ *       404:
+ *         description: Employee not found
+ */
+router.patch('/:id', updateEmployee);
 
 export default router;

@@ -33,4 +33,6 @@ const leaveSchema = new Schema<ILeave>(
   { timestamps: true }
 );
 
+leaveSchema.index({ employeeId: 1, fromDate: 1, toDate: 1 });
+
 export default mongoose.model<ILeave>('Leave', leaveSchema);
