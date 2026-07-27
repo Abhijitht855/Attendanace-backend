@@ -1,0 +1,41 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Transpiled JavaScript/Build output
+dist/
+build/
+out/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Log files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Editor/IDE configs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Diagnostic reports (Node.js)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Icon?
