@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IAdmin extends Document {
@@ -6,7 +6,9 @@ export interface IAdmin extends Document {
   email: string;
   password?: string;
   role: 'SUPER_ADMIN' | 'ADMIN';
+  roleId?: Types.ObjectId;
   isActive: boolean;
+  permissions: string[];
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
   matchPassword(enteredPassword: string): Promise<boolean>;
@@ -25,7 +27,12 @@ const adminSchema = new Schema<IAdmin>(
     },
     password: { type: String, required: true },
     role: { type: String, enum: ['SUPER_ADMIN', 'ADMIN'], default: 'ADMIN' },
+    roleId: { type: Schema.Types.ObjectId, ref: 'Role' },
     isActive: { type: Boolean, default: true },
+    permissions: {
+      type: [String],
+      default: [],
+    },
     resetPasswordToken: { type: String },
     resetPasswordExpire: { type: Date },
   },

@@ -6,6 +6,7 @@ import {
   rejectEmployee,
   updateEmployeeStatus,
   updateEmployee,
+  updateEmployeeRole,
 } from '../controllers/employeeController';
 import { protect } from '../middleware/auth';
 
@@ -183,5 +184,41 @@ router.patch('/:id/status', updateEmployeeStatus);
  *         description: Employee not found
  */
 router.patch('/:id', updateEmployee);
+
+/**
+ * @swagger
+ * /api/employees/{id}/role:
+ *   patch:
+ *     summary: Assign Role to Employee (Admin/Super Admin Only)
+ *     tags: [Employee Management]
+ *     security:
+ *       - OAuth2Password: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Employee ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [roleId]
+ *             properties:
+ *               roleId:
+ *                 type: string
+ *                 example: "6a66e7521126d3507decd094"
+ *     responses:
+ *       200:
+ *         description: Employee role updated successfully
+ *       403:
+ *         description: Forbidden (Admin access required)
+ *       404:
+ *         description: Employee or Role not found
+ */
+router.patch('/:id/role', updateEmployeeRole);
 
 export default router;

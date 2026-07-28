@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import Admin from '../models/Admin';
+import Role, { SYSTEM_PERMISSIONS } from '../models/Role';
 
 // Email validation helper using regex
 const isValidEmail = (email: string): boolean => {
@@ -47,12 +48,22 @@ export const setupSuperAdmin = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Email already in use' });
   }
 
+  // Find or create SUPER_ADMIN role doc
+  let roleDoc = await Role.findOne({ name: 'SUPER_ADMIN' });
+  if (!roleDoc) {
+    roleDoc = await Role.create({
+      name: 'SUPER_ADMIN',
+      description: 'Super Administrator Role with full system access',
+    });
+  }
+
   // Create Super Admin
   const admin = await Admin.create({
     name: name.trim(),
     email: formattedEmail,
     password,
     role: 'SUPER_ADMIN',
+    roleId: roleDoc._id as any,
     isActive: true,
   });
 
@@ -98,11 +109,21 @@ export const createAdmin = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Admin with this email already exists' });
   }
 
+  // Find or create default ADMIN_DEFAULT role doc
+  let roleDoc = await Role.findOne({ name: 'ADMIN_DEFAULT' });
+  if (!roleDoc) {
+    roleDoc = await Role.create({
+      name: 'ADMIN_DEFAULT',
+      description: 'Default Admin Role for managing staff, leaves, and configurations',
+    });
+  }
+
   const admin = await Admin.create({
     name: name.trim(),
     email: formattedEmail,
     password,
     role: role || 'ADMIN',
+    roleId: roleDoc._id as any,
   });
 
   res.status(201).json({
@@ -160,4 +181,107 @@ export const updateAdminStatus = async (req: Request, res: Response) => {
     _id: admin._id,
     isActive: admin.isActive
   });
+};
+
+// @desc    Update Admin Permissions (Super Admin Only)
+// @route   PATCH /api/admin/:id/permissions
+export const updateAdminPermissions = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    
+    // Enforce Super Admin only
+    if (user.role !== 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Forbidden. Super Admin access required.' });
+    }
+
+    const { permissions } = req.body;
+
+    if (!Array.isArray(permissions)) {
+      return res.status(400).json({ message: 'permissions must be an array of strings' });
+    }
+
+    // Find the target admin
+    const admin = await Admin.findById(req.params.id);
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    // Prevent changing Super Admin permissions (Super Admin has full access implicitly)
+    if (admin.role === 'SUPER_ADMIN') {
+      return res.status(400).json({ message: 'Cannot modify Super Admin permissions' });
+    }
+
+    admin.permissions = permissions;
+    await admin.save();
+
+    res.json({
+      message: 'Admin permissions updated successfully',
+      _id: admin._id,
+      name: admin.name,
+      email: admin.email,
+      role: admin.role,
+      permissions: admin.permissions,
+    });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// @desc    Get all available system permissions (Admin/Super Admin Only)
+// @route   GET /api/admin/permissions
+export const getAvailablePermissions = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    if (!user || !user.role) {
+      return res.status(403).json({ message: 'Forbidden. Admin access required.' });
+    }
+    res.json(SYSTEM_PERMISSIONS);
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// @desc    Update Admin Role (Super Admin Only)
+// @route   PATCH /api/admin/:id/role
+export const updateAdminRole = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    if (user.role !== 'SUPER_ADMIN' && user.roleId?.name !== 'SUPER_ADMIN') {
+      return res.status(403).json({ message: 'Forbidden. Super Admin access required.' });
+    }
+
+    const { roleId } = req.body;
+    if (!roleId) {
+      return res.status(400).json({ message: 'roleId is required' });
+    }
+
+    const admin = await Admin.findById(req.params.id);
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    const roleDoc = await Role.findById(roleId);
+    if (!roleDoc) {
+      return res.status(404).json({ message: 'Role not found' });
+    }
+
+    // Set the role
+    admin.roleId = roleDoc._id as any;
+    admin.role = roleDoc.name === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'ADMIN';
+
+    await admin.save();
+
+    res.json({
+      message: 'Admin role updated successfully',
+      admin: {
+        _id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+        roleId: admin.roleId,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
 };

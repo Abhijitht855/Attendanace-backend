@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IEmployee extends Document {
@@ -6,6 +6,7 @@ export interface IEmployee extends Document {
     email: string;
     password?: string;
     department: string;
+    roleId?: Types.ObjectId;
     isApproved: boolean;
     isActive: boolean;
     resetPasswordToken?: string;
@@ -19,6 +20,7 @@ const employeeSchema = new Schema<IEmployee>(
         email: { type: String, required: true, unique: true },
         password: { type: String, required: true },
         department: { type: String, required: true },
+        roleId: { type: Schema.Types.ObjectId, ref: 'Role' },
         isApproved: { type: Boolean, default: false },
         isActive: { type: Boolean, default: true },
         resetPasswordToken: { type: String },

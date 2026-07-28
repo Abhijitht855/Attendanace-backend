@@ -158,13 +158,14 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const resetUrl = `${req.protocol}://${req.get('host')}/api/auth/reset-password/${resetToken}`;
     const mailSent = await sendResetEmail(user.email, resetUrl);
 
+    const isProduction = process.env.NODE_ENV === 'production';
+
     res.json({
       message: mailSent 
         ? 'Password reset email sent successfully.' 
-        : 'Password reset request processed (Simulated).',
-      // For local testing / Postman testing without setting up SMTP:
-      resetToken,
-      resetUrl,
+        : 'Password reset request processed. Check your email for the reset link.',
+      // Only expose token in development mode for local testing convenience
+      ...(!isProduction && { resetToken, resetUrl }),
     });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });

@@ -12,8 +12,13 @@ export const checkIn = async (req: Request, res: Response) => {
     const user = req.user as any;
 
     // Enforce employee only (Admins cannot check in/out)
-    if (user.role) {
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
       return res.status(403).json({ message: 'Admins cannot perform check-in/out operations' });
+    }
+
+    // Block unapproved employees from checking in
+    if (user.isApproved === false) {
+      return res.status(403).json({ message: 'Your account is pending approval. Contact admin.' });
     }
 
     const now = new Date();
@@ -96,7 +101,7 @@ export const checkOut = async (req: Request, res: Response) => {
     const user = req.user as any;
 
     // Enforce employee only
-    if (user.role) {
+    if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
       return res.status(403).json({ message: 'Admins cannot perform check-in/out operations' });
     }
 

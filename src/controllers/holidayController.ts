@@ -62,3 +62,28 @@ export const getHolidays = async (req: Request, res: Response) => {
     res.status(500).json({ message: (error as Error).message });
   }
 };
+
+// @desc    Delete a company holiday
+// @route   DELETE /api/holidays/:id
+export const deleteHoliday = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    if (!user.role) {
+      return res.status(403).json({ message: 'Forbidden. Admin access required.' });
+    }
+
+    const holiday = await Holiday.findById(req.params.id);
+
+    if (!holiday) {
+      return res.status(404).json({ message: 'Holiday not found' });
+    }
+
+    await holiday.deleteOne();
+
+    res.json({
+      message: `Holiday "${holiday.name}" has been removed successfully`,
+    });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};

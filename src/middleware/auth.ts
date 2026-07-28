@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import Admin from '../models/Admin';
 import Employee from '../models/Employee';
+import { SYSTEM_PERMISSIONS } from '../models/Role';
 
 interface JwtPayload {
   id: string;
@@ -16,11 +17,11 @@ export const protect = async (req: Request, res: Response, next: NextFunction): 
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123') as JwtPayload;
 
       // 1. First check in Admin Collection
-      let user: any = await Admin.findById(decoded.id).select('-password');
+      let user: any = await Admin.findById(decoded.id).populate('roleId').select('-password');
 
       // 2. If not found in Admin, check in Employee Collection
       if (!user) {
-        user = await Employee.findById(decoded.id).select('-password');
+        user = await Employee.findById(decoded.id).populate('roleId').select('-password');
       }
 
       if (!user) {
@@ -31,6 +32,15 @@ export const protect = async (req: Request, res: Response, next: NextFunction): 
       if (!user.isActive) {
         res.status(403).json({ message: 'Account is deactivated' });
         return;
+      }
+
+      // Dynamically attach permissions based on populated roleId
+      if (user.role === 'SUPER_ADMIN' || (user.roleId && user.roleId.name === 'SUPER_ADMIN')) {
+        user.permissions = SYSTEM_PERMISSIONS;
+      } else if (user.roleId) {
+        user.permissions = user.roleId.permissions || [];
+      } else {
+        user.permissions = [];
       }
 
       req.user = user;

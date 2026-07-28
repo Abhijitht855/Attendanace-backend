@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { addHoliday, getHolidays } from '../controllers/holidayController';
+import { addHoliday, getHolidays, deleteHoliday } from '../controllers/holidayController';
 import { protect } from '../middleware/auth';
 
 const router = Router();
@@ -55,5 +55,30 @@ router.post('/', addHoliday);
  *         description: Not authorized
  */
 router.get('/', getHolidays);
+
+/**
+ * @swagger
+ * /api/holidays/{id}:
+ *   delete:
+ *     summary: Delete a Company Holiday (Admin Only)
+ *     tags: [Holiday Management]
+ *     security:
+ *       - OAuth2Password: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Holiday document ID
+ *     responses:
+ *       200:
+ *         description: Holiday removed successfully
+ *       403:
+ *         description: Forbidden (Admin access required)
+ *       404:
+ *         description: Holiday not found
+ */
+router.delete('/:id', deleteHoliday);
 
 export default router;

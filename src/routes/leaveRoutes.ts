@@ -5,6 +5,7 @@ import {
   approveLeave,
   rejectLeave,
   getLeaveBalance,
+  cancelLeave,
 } from '../controllers/leaveController';
 import { protect } from '../middleware/auth';
 
@@ -186,5 +187,32 @@ router.patch('/:id/reject', rejectLeave);
  *         description: Employee not found
  */
 router.get('/balance/:employeeId', getLeaveBalance);
+
+/**
+ * @swagger
+ * /api/leaves/{id}/cancel:
+ *   patch:
+ *     summary: Cancel a pending leave request (Employee cancels own)
+ *     tags: [Leave Management]
+ *     security:
+ *       - OAuth2Password: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Leave application ID
+ *     responses:
+ *       200:
+ *         description: Leave cancelled successfully
+ *       400:
+ *         description: Leave is already processed
+ *       403:
+ *         description: Not your leave or forbidden
+ *       404:
+ *         description: Leave not found
+ */
+router.patch('/:id/cancel', cancelLeave);
 
 export default router;

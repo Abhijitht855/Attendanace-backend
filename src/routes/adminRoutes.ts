@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { setupSuperAdmin, createAdmin, getAdmins, updateAdminStatus } from '../controllers/adminController';
+import { setupSuperAdmin, createAdmin, getAdmins, updateAdminStatus, updateAdminPermissions, getAvailablePermissions, updateAdminRole } from '../controllers/adminController';
 import { protect } from '../middleware/auth';
 
 const router = Router();
@@ -111,5 +111,104 @@ router.get('/list', getAdmins);
  *         description: Status updated successfully
  */
 router.patch('/:id/status', updateAdminStatus);
+
+/**
+ * @swagger
+ * /api/admin/{id}/permissions:
+ *   patch:
+ *     summary: Update Admin Permissions (Super Admin Only)
+ *     tags: [Admin Management]
+ *     security:
+ *       - OAuth2Password: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [permissions]
+ *             properties:
+ *               permissions:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["MANAGE_EMPLOYEES", "APPROVE_ATTENDANCE", "VIEW_REPORTS"]
+ *     responses:
+ *       200:
+ *         description: Admin permissions updated successfully
+ *       400:
+ *         description: Invalid permissions array or target is Super Admin
+ *       403:
+ *         description: Forbidden (Super Admin access required)
+ *       404:
+ *         description: Admin not found
+ */
+router.patch('/:id/permissions', updateAdminPermissions);
+
+/**
+ * @swagger
+ * /api/admin/permissions:
+ *   get:
+ *     summary: Get all available system permissions (Admin/Super Admin Only)
+ *     tags: [Admin Management]
+ *     security:
+ *       - OAuth2Password: []
+ *     responses:
+ *       200:
+ *         description: List of available system permissions
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: string
+ *               example: ["MANAGE_EMPLOYEES", "APPROVE_ATTENDANCE", "MANAGE_LEAVES", "MANAGE_HOLIDAYS", "VIEW_REPORTS", "MANAGE_SETTINGS"]
+ *       403:
+ *         description: Forbidden (Admin access required)
+ */
+router.get('/permissions', getAvailablePermissions);
+
+/**
+ * @swagger
+ * /api/admin/{id}/role:
+ *   patch:
+ *     summary: Assign Role to Admin (Super Admin Only)
+ *     tags: [Admin Management]
+ *     security:
+ *       - OAuth2Password: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Admin User ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [roleId]
+ *             properties:
+ *               roleId:
+ *                 type: string
+ *                 example: "6a66e7521126d3507decd094"
+ *     responses:
+ *       200:
+ *         description: Admin role updated successfully
+ *       403:
+ *         description: Forbidden (Super Admin access required)
+ *       404:
+ *         description: Admin or Role not found
+ */
+router.patch('/:id/role', updateAdminRole);
 
 export default router;

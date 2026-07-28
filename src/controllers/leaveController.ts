@@ -296,3 +296,35 @@ export const getLeaveBalance = async (req: Request, res: Response) => {
     res.status(500).json({ message: (error as Error).message });
   }
 };
+
+// @desc    Cancel a pending leave request (Employee cancels own)
+// @route   PATCH /api/leaves/:id/cancel
+export const cancelLeave = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+
+    const leave = await Leave.findById(req.params.id);
+
+    if (!leave) {
+      return res.status(404).json({ message: 'Leave application not found' });
+    }
+
+    // Ensure the employee owns this leave
+    if (leave.employeeId.toString() !== user._id.toString()) {
+      return res.status(403).json({ message: 'You can only cancel your own leave requests' });
+    }
+
+    if (leave.status !== 'PENDING') {
+      return res.status(400).json({ message: `Cannot cancel a leave that is already ${leave.status}` });
+    }
+
+    // Delete the leave record entirely
+    await leave.deleteOne();
+
+    res.json({
+      message: 'Leave application cancelled successfully',
+    });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};

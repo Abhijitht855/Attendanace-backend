@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Employee from '../models/Employee';
 import Admin from '../models/Admin';
+import Role from '../models/Role';
 
 // Helper function to validate email
 const isValidEmail = (email: string): boolean => {
@@ -42,11 +43,21 @@ export const registerEmployee = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Employee with this email already exists' });
     }
 
+    // Find or create default EMPLOYEE_DEFAULT role doc
+    let roleDoc = await Role.findOne({ name: 'EMPLOYEE_DEFAULT' });
+    if (!roleDoc) {
+      roleDoc = await Role.create({
+        name: 'EMPLOYEE_DEFAULT',
+        description: 'Default Employee Role for daily check-in, leaves, and history',
+      });
+    }
+
     const employee = await Employee.create({
       name: name.trim(),
       email: formattedEmail,
       password,
       department: department.trim(),
+      roleId: roleDoc._id as any,
       isApproved: true, // Automatically approved as it is created by an Admin
       isActive: true,
     });
@@ -218,6 +229,49 @@ export const updateEmployee = async (req: Request, res: Response) => {
         department: employee.department,
         isActive: employee.isActive,
         isApproved: employee.isApproved,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// @desc    Update Employee Role (Admin/Super Admin Only)
+// @route   PATCH /api/employees/:id/role
+export const updateEmployeeRole = async (req: Request, res: Response) => {
+  try {
+    const user = req.user as any;
+    // Enforce Admin access
+    if (!user || !user.role) {
+      return res.status(403).json({ message: 'Forbidden. Admin access required.' });
+    }
+
+    const { roleId } = req.body;
+    if (!roleId) {
+      return res.status(400).json({ message: 'roleId is required' });
+    }
+
+    const employee = await Employee.findById(req.params.id);
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found' });
+    }
+
+    const roleDoc = await Role.findById(roleId);
+    if (!roleDoc) {
+      return res.status(404).json({ message: 'Role not found' });
+    }
+
+    employee.roleId = roleDoc._id as any;
+    await employee.save();
+
+    res.json({
+      message: 'Employee role updated successfully',
+      employee: {
+        _id: employee._id,
+        name: employee.name,
+        email: employee.email,
+        department: employee.department,
+        roleId: employee.roleId,
       }
     });
   } catch (error) {

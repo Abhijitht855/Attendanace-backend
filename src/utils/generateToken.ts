@@ -1,9 +1,9 @@
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
 export const generateToken = (id: string, role?: string): string => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET || 'secret123', {
-    expiresIn: '30d',
-  });
+  const expiresIn = (process.env.JWT_EXPIRES_IN || '7d') as SignOptions['expiresIn'];
+  const secret = process.env.JWT_SECRET || 'secret123';
+  return jwt.sign({ id, role }, secret, { expiresIn });
 };
 
 export default generateToken;
