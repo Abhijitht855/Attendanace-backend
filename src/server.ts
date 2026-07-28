@@ -25,9 +25,9 @@ const app = express();
 const isProduction = process.env.NODE_ENV === 'production';
 
 // ─── Security Middlewares ────────────────────────────────────────────────────
-// Helmet sets various HTTP headers for security (CSP, X-Frame-Options, etc.)
+// Helmet sets HTTP security headers (disable CSP to ensure Swagger UI stylesheets & inline scripts load)
 app.use(helmet({
-  contentSecurityPolicy: isProduction ? undefined : false, // Disable CSP in dev for Swagger UI
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
 }));
 
@@ -42,24 +42,22 @@ const corsOptions: cors.CorsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Request body size limits to prevent payload abuse
+// Request body size limits
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // ─── Rate Limiting ───────────────────────────────────────────────────────────
-// Aggressive rate limit on authentication endpoints to prevent brute-force
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15-minute window
-  max: 15, // Max 15 attempts per window
+  windowMs: 15 * 60 * 1000,
+  max: 15,
   message: { message: 'Too many attempts. Please try again after 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// General API rate limit
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 300, // 300 requests per 15 min
+  max: 300,
   message: { message: 'Too many requests. Please slow down.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -68,10 +66,8 @@ const generalLimiter = rateLimit({
 app.use('/api/auth', authLimiter);
 app.use('/api', generalLimiter);
 
-// Swagger Documentation Route (disable in production if desired)
-if (!isProduction) {
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-}
+// ─── Swagger Documentation Route (Always mounted for easy API testing) ────────
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -85,7 +81,11 @@ app.use('/api/roles', roleRoutes);
 
 // Root Endpoint
 app.get('/', (req: Request, res: Response) => {
-  res.json({ message: 'Attendance System API is running.', environment: process.env.NODE_ENV || 'development' });
+  res.json({ 
+    message: 'Attendance System API is running.', 
+    documentation: '/api-docs',
+    environment: process.env.NODE_ENV || 'development' 
+  });
 });
 
 // Global Error Handler Middleware
@@ -95,7 +95,5 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`[${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}] Server running on port ${PORT}`);
-  if (!isProduction) {
-    console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
-  }
+  console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
 });
